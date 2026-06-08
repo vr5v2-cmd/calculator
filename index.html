@@ -28,14 +28,26 @@
         <h2 id="result">$0.00</h2>
     </div>
 
-    <script>
-        function convert() {
-            let uah = document.getElementById("uanInput").value;
-            let rate = 41.5; 
-            let usd = uah / rate;
-            document.getElementById("result").innerText = "$" + usd.toFixed(2);
-        }
-    </script>
+   <script>
+    let currentRate = 41.5; // Базовий курс
 
-</body>
-</html>
+    // Функція для отримання актуального курсу
+    async function fetchRate() {
+        try {
+            const response = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json');
+            const data = await response.json();
+            currentRate = data[0].rate;
+            document.getElementById('rateDisplay').innerText = "Курс НБУ: " + currentRate.toFixed(2) + " грн";
+        } catch (error) {
+            console.log("Курс завантажено з помилкою, використовуємо стандартний");
+        }
+    }
+    fetchRate();
+
+    function convert() {
+        let uah = document.getElementById('uanInput').value;
+        let usd = (uah / currentRate).toFixed(2);
+        document.getElementById('result').innerText = "$" + usd;
+    }
+</script>
+
