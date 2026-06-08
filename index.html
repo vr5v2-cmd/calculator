@@ -2,65 +2,80 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Currency Converter</title>
+    <title>Global Converter Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
-        .box { background: #1e293b; padding: 30px; border-radius: 20px; display: inline-block; max-width: 450px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        input, select { padding: 12px; border-radius: 10px; border: none; margin: 8px 0; width: 90%; background: #334155; color: white; }
-        button { padding: 15px; border-radius: 10px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; width: 95%; margin-top: 10px; }
-        #history { margin-top: 20px; text-align: left; font-size: 0.9em; color: #94a3b8; }
+        body { font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
+        .box { background: #1e293b; padding: 25px; border-radius: 20px; display: inline-block; max-width: 400px; width: 100%; }
+        select, input { padding: 10px; margin: 5px; width: 90%; border-radius: 8px; border: none; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h1> Global Converter</h1>
-    <input type="number" id="amount" placeholder="Сума">
+    <h1>Global Converter</h1>
     
+    <select id="langSelect" onchange="changeLanguage()">
+        <option value="uk">Українська 🇺🇦</option>
+        <option value="en">English 🇺🇸</option>
+        <option value="pl">Polski 🇵🇱</option>
+    </select>
+
+    <input type="number" id="amount" placeholder="Сума">
     <select id="fromCurrency"></select>
     <select id="toCurrency"></select>
     
     <button onclick="convert()">Конвертувати</button>
     <h2 id="result">0.00</h2>
-
-    <div id="history">
-        <h4>Останні розрахунки:</h4>
-        <ul id="historyList"></ul>
-    </div>
 </div>
 
 <script>
-    const apiKey = "https://api.exchangerate-api.com/v4/latest/USD"; // Безкоштовне API
+    const ratesApi = "https://api.exchangerate-api.com/v4/latest/USD";
     let rates = {};
 
-    async function loadCurrencies() {
-        const res = await fetch(apiKey);
+    // Словник для перекладу валют
+    const currencyNames = {
+        "UAH": {"uk": "Гривня", "en": "Hryvnia", "pl": "Hrywna"},
+        "USD": {"uk": "Долар США", "en": "US Dollar", "pl": "Dolar amerykański"},
+        "EUR": {"uk": "Євро", "en": "Euro", "pl": "Euro"},
+        "PLN": {"uk": "Злотий", "en": "Zloty", "pl": "Złoty"}
+    };
+
+    async function init() {
+        const res = await fetch(ratesApi);
         const data = await res.json();
         rates = data.rates;
+        updateSelectors();
+    }
+
+    function updateSelectors() {
+        const lang = document.getElementById('langSelect').value;
         const currencies = Object.keys(rates);
         
+        // Очищаємо перед оновленням
+        document.getElementById('fromCurrency').innerHTML = "";
+        document.getElementById('toCurrency').innerHTML = "";
+
         currencies.forEach(cur => {
-            document.getElementById('fromCurrency').innerHTML += `<option value="${cur}">${cur}</option>`;
-            document.getElementById('toCurrency').innerHTML += `<option value="${cur}">${cur}</option>`;
+            let name = currencyNames[cur] ? currencyNames[cur][lang] : cur;
+            let option = `<option value="${cur}">${name} (${cur})</option>`;
+            document.getElementById('fromCurrency').innerHTML += option;
+            document.getElementById('toCurrency').innerHTML += option;
         });
+    }
+
+    function changeLanguage() {
+        updateSelectors();
     }
 
     function convert() {
         const amount = document.getElementById('amount').value;
         const from = document.getElementById('fromCurrency').value;
         const to = document.getElementById('toCurrency').value;
-        
         const result = (amount / rates[from]) * rates[to];
         document.getElementById('result').innerText = result.toFixed(2) + " " + to;
-
-        // Додаємо в історію
-        const li = document.createElement('li');
-        li.innerText = `${amount} ${from} = ${result.toFixed(2)} ${to}`;
-        document.getElementById('historyList').prepend(li);
     }
 
-    loadCurrencies();
+    init();
 </script>
 </body>
 </html>
