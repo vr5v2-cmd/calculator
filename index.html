@@ -3,72 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="qdiuIW42xUJ80Zgv7sN-sHPwIYN4zppBNZPxWaRq-WE" />
-    <title>Онлайн Конвертер Валют</title>
+    <title>Global Currency Converter</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
-        .box { background: #1e1e1e; padding: 30px; border-radius: 15px; display: inline-block; max-width: 400px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        input, select { padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; margin: 5px; width: 80%; }
-        button { padding: 12px 25px; border-radius: 8px; border: none; background: #ff9800; color: black; font-weight: bold; cursor: pointer; margin-top: 10px; width: 85%; }
-        #rateDisplay { color: #888; font-size: 14px; margin-bottom: 20px; }
-        h2 { color: #4CAF50; margin-top: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
+        .box { background: #1e293b; padding: 30px; border-radius: 20px; display: inline-block; max-width: 450px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        input, select { padding: 12px; border-radius: 10px; border: none; margin: 8px 0; width: 90%; background: #334155; color: white; }
+        button { padding: 15px; border-radius: 10px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; width: 95%; margin-top: 10px; }
+        #history { margin-top: 20px; text-align: left; font-size: 0.9em; color: #94a3b8; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h1>Конвертер</h1>
-    <p id="rateDisplay">Курс: завантаження...</p>
+    <h1> Global Converter</h1>
+    <input type="number" id="amount" placeholder="Сума">
     
-    <input type="number" id="amount" placeholder="Введіть суму">
-    
-    <select id="fromCurrency">
-        <option value="UAH">Гривня (UAH)</option>
-        <option value="USD">Долар (USD)</option>
-    </select>
-    
-    <div style="margin: 10px;">⬇</div>
-    
-    <select id="toCurrency">
-        <option value="USD">Долар (USD)</option>
-        <option value="UAH">Гривня (UAH)</option>
-    </select>
+    <select id="fromCurrency"></select>
+    <select id="toCurrency"></select>
     
     <button onclick="convert()">Конвертувати</button>
     <h2 id="result">0.00</h2>
+
+    <div id="history">
+        <h4>Останні розрахунки:</h4>
+        <ul id="historyList"></ul>
+    </div>
 </div>
 
 <script>
-    let currentRate = 41.5;
+    const apiKey = "https://api.exchangerate-api.com/v4/latest/USD"; // Безкоштовне API
+    let rates = {};
 
-    async function fetchRate() {
-        try {
-            const response = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json');
-            const data = await response.json();
-            currentRate = data[0].rate;
-            document.getElementById('rateDisplay').innerText = "Курс НБУ: " + currentRate.toFixed(2) + " грн";
-        } catch (e) {
-            document.getElementById('rateDisplay').innerText = "Курс НБУ: " + currentRate + " грн (резерв)";
-        }
+    async function loadCurrencies() {
+        const res = await fetch(apiKey);
+        const data = await res.json();
+        rates = data.rates;
+        const currencies = Object.keys(rates);
+        
+        currencies.forEach(cur => {
+            document.getElementById('fromCurrency').innerHTML += `<option value="${cur}">${cur}</option>`;
+            document.getElementById('toCurrency').innerHTML += `<option value="${cur}">${cur}</option>`;
+        });
     }
-    fetchRate();
 
     function convert() {
-        let amount = parseFloat(document.getElementById('amount').value);
-        let from = document.getElementById('fromCurrency').value;
-        let to = document.getElementById('toCurrency').value;
-        let result = 0;
-
-        if (from === to) {
-            result = amount;
-        } else if (from === "UAH" && to === "USD") {
-            result = amount / currentRate;
-        } else {
-            result = amount * currentRate;
-        }
+        const amount = document.getElementById('amount').value;
+        const from = document.getElementById('fromCurrency').value;
+        const to = document.getElementById('toCurrency').value;
         
+        const result = (amount / rates[from]) * rates[to];
         document.getElementById('result').innerText = result.toFixed(2) + " " + to;
+
+        // Додаємо в історію
+        const li = document.createElement('li');
+        li.innerText = `${amount} ${from} = ${result.toFixed(2)} ${to}`;
+        document.getElementById('historyList').prepend(li);
     }
+
+    loadCurrencies();
 </script>
 </body>
 </html>
